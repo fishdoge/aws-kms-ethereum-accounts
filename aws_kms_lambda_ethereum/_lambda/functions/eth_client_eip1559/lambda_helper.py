@@ -140,12 +140,12 @@ def find_eth_signature(params: EthKmsParams, plaintext: bytes) -> dict:
 
 
 def get_recovery_id(
-    msg_hash: bytes, r: int, s: int, eth_checksum_addr: str, chainid: int
+    msg_hash: bytes, r: int, s: int, eth_checksum_addr: str, chain_id: int
 ) -> dict:
     # https://eips.ethereum.org/EIPS/eip-155
     # calculate v according to EIP155 based on chainid parameter
     # {0,1} + CHAIN_ID * 2 + 35
-    v_lower = chainid * 2 + 35
+    v_lower = chain_id * 2 + 35
     v_range = [v_lower, v_lower + 1]
 
     for v in v_range:
@@ -161,28 +161,30 @@ def get_tx_params(
     dst_address: str,
     amount: int,
     nonce: int,
-    chainid: int,
+    chain_id: int,
     type: int,
+    gas: int,
     max_fee_per_gas: int,
     max_priority_fee_per_gas: int,
+    data: str,
 ) -> dict:
     transaction = {
         "nonce": nonce,
         "to": dst_address,
         "value": w3.toWei(amount, "ether"),
-        "data": "0x00",
-        "gas": 160000,
+        "data": data,
+        "gas": gas,
         "maxFeePerGas": max_fee_per_gas,
         "maxPriorityFeePerGas": max_priority_fee_per_gas,
         "type": type,
-        "chainId": chainid,
+        "chainId": chain_id,
     }
 
     return transaction
 
 
 def assemble_tx(
-    tx_params: dict, params: EthKmsParams, eth_checksum_addr: str, chainid: int
+    tx_params: dict, params: EthKmsParams, eth_checksum_addr: str, chain_id: int
 ) -> (bytes, bytes):
     tx_unsigned = serializable_unsigned_transaction_from_dict(
         transaction_dict=tx_params
@@ -196,7 +198,7 @@ def assemble_tx(
         r=tx_sig["r"],
         s=tx_sig["s"],
         eth_checksum_addr=eth_checksum_addr,
-        chainid=chainid,
+        chain_id=chain_id,
     )
 
     tx_encoded = encode_transaction(

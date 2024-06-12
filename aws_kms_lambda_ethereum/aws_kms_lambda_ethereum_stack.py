@@ -6,9 +6,7 @@ from aws_cdk import (
     Duration,
     CfnOutput,
     BundlingOptions,
-    RemovalPolicy,
     aws_lambda,
-    aws_kms,
     DockerImage,
 )
 from constructs import Construct
@@ -51,35 +49,26 @@ class AwsKmsLambdaEthereumStack(Stack):
         self,
         scope: Construct,
         construct_id: str,
-        eth_network: str = "rinkeby",
+        kms_key_id: str,
+        eth_network: str = "sepolia",
         **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        cmk = aws_kms.Key(
-            self, "eth-cmk-identity", removal_policy=RemovalPolicy.DESTROY
-        )
-        cfn_cmk = cmk.node.default_child
-        cfn_cmk.key_spec = "ECC_SECG_P256K1"
-        cfn_cmk.key_usage = "SIGN_VERIFY"
-
-        eth_client_eip1559 = EthLambda(
+        EthLambda(
             self,
             "KmsClientEIP1559",
             dir="aws_kms_lambda_ethereum/_lambda/functions/eth_client_eip1559",
             env={
                 "LOG_LEVEL": "DEBUG",
-                "KMS_KEY_ID": cmk.key_id,
+                "KMS_KEY_ID": kms_key_id,
                 "ETH_NETWORK": eth_network,
             },
         )
 
-        cmk.grant(eth_client_eip1559.lf, "kms:GetPublicKey")
-        cmk.grant(eth_client_eip1559.lf, "kms:Sign")
-
         CfnOutput(
             self,
             "KeyID",
-            value=cmk.key_id,
+            value=kms_key_id,
             description="KeyID of the KMS-CMK instance used as the Ethereum identity instance",
         )

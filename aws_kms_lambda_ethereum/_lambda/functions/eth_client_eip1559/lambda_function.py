@@ -42,7 +42,7 @@ def lambda_handler(event, context):
 
         return {"eth_checksum_address": eth_checksum_address}
 
-    # {"operation": "send",
+    # {"operation": "sign",
     #  "amount": 123,
     #  "dst_address": "0x...",
     #  "nonce": 0}
@@ -69,11 +69,15 @@ def lambda_handler(event, context):
 
         nonce = event.get("nonce")
 
+        # get the call data
+        data = event.get("data")
+
         # optional params
-        chainid = event.get("chainid")
+        chain_id = event.get("chain_id")
         type = event.get("type")
-        max_fee_per_gas = event.get("max_fee_per_gas")
-        max_priority_fee_per_gas = event.get("max_priority_fee_per_gas")
+        gas = int(event.get("gas"))
+        max_fee_per_gas = int(event.get("max_fee_per_gas"))
+        max_priority_fee_per_gas = int(event.get("max_priority_fee_per_gas"))
 
         # download public key from KMS
         pub_key = get_kms_public_key(key_id)
@@ -86,10 +90,12 @@ def lambda_handler(event, context):
             dst_address=dst_address,
             amount=amount,
             nonce=nonce,
-            chainid=chainid,
+            chain_id=chain_id,
             type=type,
+            gas=gas,
             max_fee_per_gas=max_fee_per_gas,
             max_priority_fee_per_gas=max_priority_fee_per_gas,
+            data=data,
         )
 
         # assemble Ethereum transaction and sign it offline
@@ -97,7 +103,7 @@ def lambda_handler(event, context):
             tx_params=tx_params,
             params=params,
             eth_checksum_addr=eth_checksum_addr,
-            chainid=chainid,
+            chain_id=chain_id,
         )
 
         return {
